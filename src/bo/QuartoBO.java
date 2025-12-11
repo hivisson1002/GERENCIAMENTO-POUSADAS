@@ -4,6 +4,9 @@ import dao.QuartoDAO;
 import dao.PousadaDAO;
 import dto.Quarto;
 import dto.IQuartoLuxo;
+import exception.DadosInvalidosException;
+import exception.EntidadeNaoEncontradaException;
+import exception.ValidacaoException;
 import java.util.List;
 
 /**
@@ -22,14 +25,16 @@ public class QuartoBO {
     /**
      * Adiciona um quarto após validações
      * @param quarto Quarto a ser adicionado
-     * @throws Exception Se alguma validação falhar
+     * @throws ValidacaoException Se alguma validação falhar
+     * @throws EntidadeNaoEncontradaException Se pousada não existir
+     * @throws Exception Se houver erro no banco de dados
      */
-    public void adicionarQuarto(Quarto quarto) throws Exception {
+    public void adicionarQuarto(Quarto quarto) throws ValidacaoException, EntidadeNaoEncontradaException, Exception {
         validarQuarto(quarto);
         
         // Regra de negócio: Pousada deve existir antes de adicionar quarto
         if (!pousadaDAO.pousadaExiste(quarto.getPousada())) {
-            throw new Exception("Pousada com ID " + quarto.getPousada() + " não existe");
+            throw new EntidadeNaoEncontradaException("Pousada", quarto.getPousada());
         }
         
         quartoDAO.adicionar(quarto);
@@ -39,15 +44,17 @@ public class QuartoBO {
      * Lista quartos de uma pousada específica
      * @param idPousada ID da pousada
      * @return Lista de quartos
-     * @throws Exception Se ID for inválido ou houver erro no banco
+     * @throws DadosInvalidosException Se ID for inválido
+     * @throws EntidadeNaoEncontradaException Se pousada não existir
+     * @throws Exception Se houver erro no banco
      */
-    public List<Quarto> listarQuartosPorPousada(int idPousada) throws Exception {
+    public List<Quarto> listarQuartosPorPousada(int idPousada) throws DadosInvalidosException, EntidadeNaoEncontradaException, Exception {
         if (idPousada <= 0) {
-            throw new Exception("ID da pousada deve ser maior que zero");
+            throw new DadosInvalidosException("ID da pousada deve ser maior que zero");
         }
         
         if (!pousadaDAO.pousadaExiste(idPousada)) {
-            throw new Exception("Pousada com ID " + idPousada + " não existe");
+            throw new EntidadeNaoEncontradaException("Pousada", idPousada);
         }
         
         return quartoDAO.listarQuartosPorPousada(idPousada);
@@ -56,11 +63,12 @@ public class QuartoBO {
     /**
      * Deleta um quarto
      * @param id ID do quarto a ser deletado
-     * @throws Exception Se ID for inválido
+     * @throws DadosInvalidosException Se ID for inválido
+     * @throws Exception Se houver erro no banco de dados
      */
-    public void deletarQuarto(int id) throws Exception {
+    public void deletarQuarto(int id) throws DadosInvalidosException, Exception {
         if (id <= 0) {
-            throw new Exception("ID do quarto deve ser maior que zero");
+            throw new DadosInvalidosException("ID do quarto deve ser maior que zero");
         }
         
         quartoDAO.deletar(id);
@@ -69,37 +77,37 @@ public class QuartoBO {
     /**
      * Valida os dados de um quarto
      * @param quarto Quarto a ser validado
-     * @throws Exception Se alguma validação falhar
+     * @throws ValidacaoException Se alguma validação falhar
      */
-    private void validarQuarto(Quarto quarto) throws Exception {
+    private void validarQuarto(Quarto quarto) throws ValidacaoException {
         // Regra 1: Nome é obrigatório
         if (quarto.getNome() == null || quarto.getNome().trim().isEmpty()) {
-            throw new Exception("Nome do quarto é obrigatório");
+            throw new ValidacaoException("Nome do quarto é obrigatório");
         }
         
         // Regra 2: Nome deve ter pelo menos 3 caracteres
         if (quarto.getNome().trim().length() < 3) {
-            throw new Exception("Nome do quarto deve ter pelo menos 3 caracteres");
+            throw new ValidacaoException("Nome do quarto deve ter pelo menos 3 caracteres");
         }
         
         // Regra 3: Número de camas deve ser positivo e razoável
         if (quarto.getCamas() < 1 || quarto.getCamas() > 10) {
-            throw new Exception("Número de camas deve estar entre 1 e 10");
+            throw new ValidacaoException("Número de camas deve estar entre 1 e 10");
         }
         
         // Regra 4: Valor da diária deve ser no mínimo R$ 50
         if (quarto.getValor_dia() < 50) {
-            throw new Exception("Valor da diária deve ser no mínimo R$ 50,00");
+            throw new ValidacaoException("Valor da diária deve ser no mínimo R$ 50,00");
         }
         
         // Regra 5: Valor da diária não pode ser excessivo
         if (quarto.getValor_dia() > 10000) {
-            throw new Exception("Valor da diária não pode ser superior a R$ 10.000,00");
+            throw new ValidacaoException("Valor da diária não pode ser superior a R$ 10.000,00");
         }
         
         // Regra 6: ID da pousada deve ser positivo
         if (quarto.getPousada() <= 0) {
-            throw new Exception("ID da pousada deve ser maior que zero");
+            throw new ValidacaoException("ID da pousada deve ser maior que zero");
         }
     }
     
@@ -113,15 +121,15 @@ public class QuartoBO {
      * @param quarto Quarto selecionado
      * @param dias Número de dias de hospedagem
      * @return Valor total com desconto aplicado
-     * @throws Exception Se parâmetros forem inválidos
+     * @throws DadosInvalidosException Se parâmetros forem inválidos
      */
-    public double calcularValorTotal(Quarto quarto, int dias) throws Exception {
+    public double calcularValorTotal(Quarto quarto, int dias) throws DadosInvalidosException {
         if (dias <= 0) {
-            throw new Exception("Número de dias deve ser maior que zero");
+            throw new DadosInvalidosException("Número de dias deve ser maior que zero");
         }
         
         if (dias > 365) {
-            throw new Exception("Número de dias não pode ser superior a 365");
+            throw new DadosInvalidosException("Número de dias não pode ser superior a 365");
         }
         
         double valorTotal = quarto.getValor_dia() * dias;
@@ -143,9 +151,9 @@ public class QuartoBO {
      * @param quarto Quarto selecionado
      * @param dias Número de dias de hospedagem
      * @return Valor total com adicional de luxo
-     * @throws Exception Se parâmetros forem inválidos
+     * @throws DadosInvalidosException Se parâmetros forem inválidos
      */
-    public double calcularValorComAdicionalLuxo(Quarto quarto, int dias) throws Exception {
+    public double calcularValorComAdicionalLuxo(Quarto quarto, int dias) throws DadosInvalidosException {
         double valorBase = calcularValorTotal(quarto, dias);
         
         // Se o quarto implementa IQuartoLuxo, adiciona o valor das amenidades
@@ -197,11 +205,13 @@ public class QuartoBO {
      * @param idPousada ID da pousada
      * @param valorMaximo Valor máximo da diária
      * @return Lista de quartos dentro do orçamento
+     * @throws DadosInvalidosException Se valor máximo for inválido
+     * @throws EntidadeNaoEncontradaException Se pousada não existir
      * @throws Exception Se houver erro no acesso ao banco
      */
-    public List<Quarto> buscarQuartosPorValorMaximo(int idPousada, int valorMaximo) throws Exception {
+    public List<Quarto> buscarQuartosPorValorMaximo(int idPousada, int valorMaximo) throws DadosInvalidosException, EntidadeNaoEncontradaException, Exception {
         if (valorMaximo <= 0) {
-            throw new Exception("Valor máximo deve ser maior que zero");
+            throw new DadosInvalidosException("Valor máximo deve ser maior que zero");
         }
         
         List<Quarto> todosQuartos = listarQuartosPorPousada(idPousada);
