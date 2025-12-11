@@ -2,9 +2,9 @@ package test;
 
 import dao.QuartoDAO;
 import dto.Quarto;
-import dto.QuartoStandard;
 import dto.QuartoDeluxe;
 import dto.QuartoPresidencial;
+import dto.QuartoStandard;
 import java.util.List;
 
 public class TesteQuartoDAO {

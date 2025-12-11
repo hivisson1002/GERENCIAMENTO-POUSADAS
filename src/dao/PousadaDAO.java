@@ -1,5 +1,7 @@
 package dao;
 
+import conexao.Conexao;
+import dto.Pousada;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,10 +9,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import conexao.Conexao;
-import dto.Pousada;
-
-public class PousadaDAO extends BaseDAO {
+/**
+ * DAO para gerenciar operações de Pousada no banco de dados
+ * Implementa a interface IDAO para operações CRUD
+ */
+public class PousadaDAO extends BaseDAO implements IDAO<Pousada> {
     
     public void mostrarPousadas() {
         String sql = "SELECT * FROM pousada";
@@ -63,6 +66,33 @@ public class PousadaDAO extends BaseDAO {
         return pousada;
     }
      
+    // Implementação da interface IDAO
+    @Override
+    public void adicionar(Pousada pousada) throws Exception {
+        adicionarPousada(pousada);
+    }
+    
+    @Override
+    public Pousada obterPorId(int id) throws Exception {
+        return obterPousadaPorId(id);
+    }
+    
+    @Override
+    public void atualizar(Pousada pousada) throws Exception {
+        atualizarPousada(pousada.getId(), pousada);
+    }
+    
+    @Override
+    public void deletar(int id) throws Exception {
+        deletarPousada(id);
+    }
+    
+    @Override
+    public List<Pousada> listarTodos() throws Exception {
+        return listarTodas();
+    }
+    
+    // Métodos específicos da classe
     public void adicionarPousada(Pousada pousada) {
         String sql = "INSERT INTO pousada (pou_nome, pou_end, pou_bairro, pou_cid, pou_estado, pou_tel, pou_estrelas, pou_obs, pou_site, pou_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
