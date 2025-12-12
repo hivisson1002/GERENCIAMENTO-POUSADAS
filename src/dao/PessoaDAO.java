@@ -55,7 +55,11 @@ public class PessoaDAO extends BaseDAO implements IDAO<Pessoa> {
             ps.setString(1, usuario);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Pessoa(rs.getString("usuario"), rs.getString("nome"), rs.getString("telefone"));
+                    return new Pessoa(
+                        rs.getString("usuario").trim(), 
+                        rs.getString("nome"), 
+                        rs.getString("telefone")
+                    );
                 }
             }
         } catch (SQLException e) {
@@ -127,7 +131,7 @@ public class PessoaDAO extends BaseDAO implements IDAO<Pessoa> {
             
             while (rs.next()) {
                 pessoas.add(new Pessoa(
-                    rs.getString("usuario"),
+                    rs.getString("usuario").trim(),
                     rs.getString("nome"),
                     rs.getString("telefone")
                 ));

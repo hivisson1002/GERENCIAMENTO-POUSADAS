@@ -19,53 +19,24 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             return false;
         }
 
-        String sqlPessoa = "INSERT INTO pessoa (usuario, nome, telefone) VALUES (?, ?, ?)";
-        String sqlPessoaFisica = "INSERT INTO pessoa_fisica (pf_usuario, pf_cpf, pf_sexo) VALUES (?, ?, ?)";
-
-        Connection conn = null;
+        // Primeiro insere pessoa, depois pessoa_fisica (ordem de FK)
         try {
-            conn = Conexao.getConexao();
-            conn.setAutoCommit(false);
-
-            // Inserir na tabela Pessoa
-            try (PreparedStatement psPessoa = conn.prepareStatement(sqlPessoa)) {
-                psPessoa.setString(1, pf.getUsuario());
-                psPessoa.setString(2, pf.getNome());
-                psPessoa.setString(3, pf.getTelefone());
-                psPessoa.executeUpdate();
+            PessoaDAO.inserir(new dto.Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
+            
+            String sql = "INSERT INTO pessoa_fisica (pf_usuario, pf_cpf, pf_sexo) VALUES (?, ?, ?)";
+            try (Connection conn = Conexao.getConexao();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, pf.getUsuario());
+                ps.setInt(2, pf.getCpf());
+                ps.setString(3, pf.getSexo());
+                ps.executeUpdate();
             }
-
-            // Inserir na tabela PessoaFisica
-            try (PreparedStatement psPessoaFisica = conn.prepareStatement(sqlPessoaFisica)) {
-                psPessoaFisica.setString(1, pf.getUsuario());
-                psPessoaFisica.setInt(2, pf.getCpf());
-                psPessoaFisica.setString(3, pf.getSexo());
-                psPessoaFisica.executeUpdate();
-            }
-
-            conn.commit();
+            
             System.out.println("Pessoa Física cadastrada com sucesso!");
             return true;
-
         } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    System.out.println("ERRO no rollback: " + ex.getMessage());
-                }
-            }
             System.out.println("ERRO ao cadastrar Pessoa Física: " + e.getMessage());
-            e.printStackTrace();
             return false;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println("ERRO ao fechar conexão: " + e.getMessage());
-                }
-            }
         }
     }
 
@@ -82,11 +53,11 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new PessoaFisica(
-                        rs.getString("usuario"),
+                        rs.getString("usuario").trim(),
                         rs.getString("nome"),
                         rs.getString("telefone"),
                         rs.getInt("pf_cpf"),
-                        rs.getString("pf_sexo")
+                        rs.getString("pf_sexo").trim()
                     );
                 }
             }
@@ -112,48 +83,17 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     
     @Override
     public void atualizar(PessoaFisica pf) throws Exception {
-        String sqlPessoa = "UPDATE pessoa SET nome = ?, telefone = ? WHERE usuario = ?";
-        String sqlPessoaFisica = "UPDATE pessoa_fisica SET pf_cpf = ?, pf_sexo = ? WHERE pf_usuario = ?";
+        // Atualiza pessoa primeiro
+        PessoaDAO.atualizar(new dto.Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
         
-        Connection conn = null;
-        try {
-            conn = Conexao.getConexao();
-            conn.setAutoCommit(false);
-            
-            // Atualizar tabela Pessoa
-            try (PreparedStatement ps = conn.prepareStatement(sqlPessoa)) {
-                ps.setString(1, pf.getNome());
-                ps.setString(2, pf.getTelefone());
-                ps.setString(3, pf.getUsuario());
-                ps.executeUpdate();
-            }
-            
-            // Atualizar tabela PessoaFisica
-            try (PreparedStatement ps = conn.prepareStatement(sqlPessoaFisica)) {
-                ps.setInt(1, pf.getCpf());
-                ps.setString(2, pf.getSexo());
-                ps.setString(3, pf.getUsuario());
-                ps.executeUpdate();
-            }
-            
-            conn.commit();
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    System.out.println("ERRO no rollback: " + ex.getMessage());
-                }
-            }
-            throw new Exception("Erro ao atualizar pessoa física: " + e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println("ERRO ao fechar conexão: " + e.getMessage());
-                }
-            }
+        // Depois atualiza pessoa_fisica
+        String sql = "UPDATE pessoa_fisica SET pf_cpf = ?, pf_sexo = ? WHERE pf_usuario = ?";
+        try (Connection conn = Conexao.getConexao();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, pf.getCpf());
+            ps.setString(2, pf.getSexo());
+            ps.setString(3, pf.getUsuario());
+            ps.executeUpdate();
         }
     }
     
@@ -163,42 +103,44 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     }
     
     public static void deletarPorUsuario(String usuario) throws Exception {
-        // A exclusão em pessoa_fisica vai em cascata quando deletar de pessoa
-        String sql = "DELETE FROM pessoa WHERE usuario = ?";
-        
+        Connection conn = null;
+        try {
+            conn = Conexao.getConexao();
+            conn.setAutoCommit(false);
+            
+            // Deletar pessoa_fisica primeiro (FK)
+            String sqlPF = "DELETE FROM pessoa_fisica WHERE pf_usuario = ?";
+            try (PreparedStatement psPF = conn.prepareStatement(sqlPF)) {
+                psPF.setString(1, usuario);
+                psPF.executeUpdate();
+            }
+            
+            // Depois deletar pessoa
+            String sqlP = "DELETE FROM pessoa WHERE usuario = ?";
+            try (PreparedStatement psP = conn.prepareStatement(sqlP)) {
+                psP.setString(1, usuario);
+                psP.executeUpdate();
+            }
+            
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    System.out.println("ERRO ao fazer rollback: " + ex.getMessage());
+                }
+            }
+            throw new Exception("Erro ao deletar Pessoa Física: " + e.getMessage());
+        } finally {
+    public static void deletarPorUsuario(String usuario) throws Exception {
+        // Deleta pessoa_fisica primeiro (FK), depois pessoa
+        String sql = "DELETE FROM pessoa_fisica WHERE pf_usuario = ?";
         try (Connection conn = Conexao.getConexao();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            
             ps.setString(1, usuario);
-            
-            if (ps.executeUpdate() == 0) {
-                throw new Exception("Pessoa física não encontrada para exclusão");
-            }
-        }
-    }
-    
-    @Override
-    public List<PessoaFisica> listarTodos() throws Exception {
-        List<PessoaFisica> pessoas = new ArrayList<>();
-        String sql = "SELECT p.usuario, p.nome, p.telefone, pf.pf_cpf, pf.pf_sexo " +
-                     "FROM pessoa p " +
-                     "JOIN pessoa_fisica pf ON p.usuario = pf.pf_usuario";
-        
-        try (Connection conn = Conexao.getConexao();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            
-            while (rs.next()) {
-                pessoas.add(new PessoaFisica(
-                    rs.getString("usuario"),
-                    rs.getString("nome"),
-                    rs.getString("telefone"),
-                    rs.getInt("pf_cpf"),
-                    rs.getString("pf_sexo")
-                ));
-            }
+            ps.executeUpdate();
         }
         
-        return pessoas;
+        PessoaDAO.deletarPorUsuario(usuario);
     }
-}

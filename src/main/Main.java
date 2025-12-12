@@ -106,8 +106,7 @@ public class Main {
         try {
             Pousada pousada = new Pousada();
             
-            System.out.print("Nome: ");
-            pousada.setNome(scanner.nextLine());
+            pousada.setNome(lerTextoObrigatorio("Nome: ", 3));
             
             System.out.print("Endereço: ");
             pousada.setEndereco(scanner.nextLine());
@@ -115,14 +114,11 @@ public class Main {
             System.out.print("Bairro: ");
             pousada.setBairro(scanner.nextLine());
             
-            System.out.print("Cidade: ");
-            pousada.setCidade(scanner.nextLine());
+            pousada.setCidade(lerTextoObrigatorio("Cidade: ", 3));
             
-            System.out.print("Estado (2 letras): ");
-            pousada.setEstado(scanner.nextLine());
+            pousada.setEstado(lerTextoObrigatorio("Estado (2 letras): ", 2));
             
-            System.out.print("Telefone: ");
-            pousada.setTelefone(scanner.nextLine());
+            pousada.setTelefone(lerTextoObrigatorio("Telefone: ", 8));
             
             pousada.setEstrelas(lerInteiro("Estrelas (1-5): "));
             
@@ -281,8 +277,7 @@ public class Main {
             System.out.println("3 - Presidencial");
             int tipo = lerInteiro("Opção: ");
             
-            System.out.print("Nome do quarto: ");
-            String nomeQuarto = scanner.nextLine();
+            String nomeQuarto = lerTextoObrigatorio("Nome do quarto: ", 3);
             
             int camas = lerInteiro("Número de camas (1-10): ");
             
@@ -446,20 +441,15 @@ public class Main {
         try {
             PessoaFisica pf = new PessoaFisica();
             
-            System.out.print("Usuário: ");
-            pf.setUsuario(scanner.nextLine());
+            pf.setUsuario(lerTextoObrigatorio("Usuário: ", 3));
             
-            System.out.print("Nome: ");
-            pf.setNome(scanner.nextLine());
+            pf.setNome(lerTextoObrigatorio("Nome: ", 3));
             
-            System.out.print("Telefone: ");
-            pf.setTelefone(scanner.nextLine());
+            pf.setTelefone(lerTextoObrigatorio("Telefone: ", 8));
             
-            System.out.print("CPF (apenas números): ");
-            pf.setCpf(Integer.parseInt(scanner.nextLine()));
+            pf.setCpf(lerInteiro("CPF (apenas números): "));
             
-            System.out.print("Sexo (M/F): ");
-            pf.setSexo(scanner.nextLine());
+            pf.setSexo(lerTextoObrigatorio("Sexo (M/F): ", 1));
             
             pessoaFisicaDAO.adicionar(pf);
             System.out.println("✓ Pessoa cadastrada com sucesso!");
@@ -587,23 +577,17 @@ public class Main {
         try {
             Funcionario func = new Funcionario();
             
-            System.out.print("Usuário: ");
-            func.setUsuario(scanner.nextLine());
+            func.setUsuario(lerTextoObrigatorio("Usuário: ", 3));
             
-            System.out.print("Nome: ");
-            func.setNome(scanner.nextLine());
+            func.setNome(lerTextoObrigatorio("Nome: ", 3));
             
-            System.out.print("Telefone: ");
-            func.setTelefone(scanner.nextLine());
+            func.setTelefone(lerTextoObrigatorio("Telefone: ", 8));
             
-            System.out.print("CPF (apenas números): ");
-            func.setCpf(Integer.parseInt(scanner.nextLine()));
+            func.setCpf(lerInteiro("CPF (apenas números): "));
             
-            System.out.print("Sexo (M/F): ");
-            func.setSexo(scanner.nextLine());
+            func.setSexo(lerTextoObrigatorio("Sexo (M/F): ", 1));
             
-            System.out.print("Cargo: ");
-            func.setCargo(scanner.nextLine());
+            func.setCargo(lerTextoObrigatorio("Cargo: ", 3));
             
             func.setSalario(lerInteiro("Salário: "));
             
@@ -883,6 +867,20 @@ public class Main {
                 return Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
                 System.out.println("✗ Por favor, digite um número válido!");
+            }
+        }
+    }
+    
+    private static String lerTextoObrigatorio(String mensagem, int minCaracteres) {
+        while (true) {
+            System.out.print(mensagem);
+            String texto = scanner.nextLine().trim();
+            if (texto.isEmpty()) {
+                System.out.println("✗ Campo obrigatório! Não pode estar vazio.");
+            } else if (texto.length() < minCaracteres) {
+                System.out.println("✗ Mínimo de " + minCaracteres + " caracteres!");
+            } else {
+                return texto;
             }
         }
     }
