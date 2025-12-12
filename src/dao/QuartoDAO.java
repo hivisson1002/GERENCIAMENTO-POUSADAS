@@ -10,10 +10,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO para gerenciar operações de Quarto no banco de dados
- * Implementa a interface IDAO para operações CRUD
- */
+
 public class QuartoDAO extends BaseDAO implements IDAO<Quarto> { 
     public List<Quarto> listarQuartosPorPousada(int idPousada) throws SQLException {
         String sql = "SELECT * FROM quarto WHERE qua_pou = ?";

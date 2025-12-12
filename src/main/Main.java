@@ -1,16 +1,16 @@
 package main;
 
-import java.util.Scanner;
+import bo.PousadaBO;
+import bo.QuartoBO;
+import dao.FuncionarioDAO;
+import dao.PessoaDAO;
+import dao.PessoaFisicaDAO;
+import dao.ReservaDAO;
+import dto.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import bo.PousadaBO;
-import bo.QuartoBO;
-import dao.PessoaDAO;
-import dao.PessoaFisicaDAO;
-import dao.FuncionarioDAO;
-import dao.ReservaDAO;
-import dto.*;
+import java.util.Scanner;
 
 public class Main {
     private static Scanner scanner = new Scanner(System.in);

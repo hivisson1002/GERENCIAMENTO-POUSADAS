@@ -1,6 +1,7 @@
 package dao;
 
 import conexao.Conexao;
+import dto.Pessoa;
 import dto.PessoaFisica;
 import exception.DadosInvalidosException;
 import java.sql.*;
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
+    
+    private PessoaDAO pessoaDAO = new PessoaDAO();
     
     public static boolean cadastrarPessoaFisica(PessoaFisica pf) throws DadosInvalidosException {
         if (pf == null || pf.getUsuario() == null) {
@@ -21,7 +24,7 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
 
         // Primeiro insere pessoa, depois pessoa_fisica (ordem de FK)
         try {
-            PessoaDAO.inserir(new dto.Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
+            PessoaDAO.inserir(new Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
             
             String sql = "INSERT INTO pessoa_fisica (pf_usuario, pf_cpf, pf_sexo) VALUES (?, ?, ?)";
             try (Connection conn = Conexao.getConexao();
@@ -63,7 +66,6 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             }
         } catch (SQLException e) {
             System.out.println("ERRO ao buscar Pessoa Física: " + e.getMessage());
-            e.printStackTrace();
         }
         return null;
     }
@@ -84,7 +86,7 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     @Override
     public void atualizar(PessoaFisica pf) throws Exception {
         // Atualiza pessoa primeiro
-        PessoaDAO.atualizar(new dto.Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
+        pessoaDAO.atualizar(new Pessoa(pf.getUsuario(), pf.getNome(), pf.getTelefone()));
         
         // Depois atualiza pessoa_fisica
         String sql = "UPDATE pessoa_fisica SET pf_cpf = ?, pf_sexo = ? WHERE pf_usuario = ?";
@@ -103,37 +105,6 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     }
     
     public static void deletarPorUsuario(String usuario) throws Exception {
-        Connection conn = null;
-        try {
-            conn = Conexao.getConexao();
-            conn.setAutoCommit(false);
-            
-            // Deletar pessoa_fisica primeiro (FK)
-            String sqlPF = "DELETE FROM pessoa_fisica WHERE pf_usuario = ?";
-            try (PreparedStatement psPF = conn.prepareStatement(sqlPF)) {
-                psPF.setString(1, usuario);
-                psPF.executeUpdate();
-            }
-            
-            // Depois deletar pessoa
-            String sqlP = "DELETE FROM pessoa WHERE usuario = ?";
-            try (PreparedStatement psP = conn.prepareStatement(sqlP)) {
-                psP.setString(1, usuario);
-                psP.executeUpdate();
-            }
-            
-            conn.commit();
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    System.out.println("ERRO ao fazer rollback: " + ex.getMessage());
-                }
-            }
-            throw new Exception("Erro ao deletar Pessoa Física: " + e.getMessage());
-        } finally {
-    public static void deletarPorUsuario(String usuario) throws Exception {
         // Deleta pessoa_fisica primeiro (FK), depois pessoa
         String sql = "DELETE FROM pessoa_fisica WHERE pf_usuario = ?";
         try (Connection conn = Conexao.getConexao();
@@ -142,5 +113,32 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             ps.executeUpdate();
         }
         
-        PessoaDAO.deletarPorUsuario(usuario);
+        PessoaDAO dao = new PessoaDAO();
+        dao.deletarPorUsuario(usuario);
     }
+    
+    @Override
+    public List<PessoaFisica> listarTodos() throws Exception {
+        List<PessoaFisica> pessoas = new ArrayList<>();
+        String sql = "SELECT p.usuario, p.nome, p.telefone, pf.pf_cpf, pf.pf_sexo " +
+                     "FROM pessoa p " +
+                     "JOIN pessoa_fisica pf ON p.usuario = pf.pf_usuario";
+        
+        try (Connection conn = Conexao.getConexao();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            
+            while (rs.next()) {
+                pessoas.add(new PessoaFisica(
+                    rs.getString("usuario").trim(),
+                    rs.getString("nome"),
+                    rs.getString("telefone"),
+                    rs.getInt("pf_cpf"),
+                    rs.getString("pf_sexo").trim()
+                ));
+            }
+        }
+        
+        return pessoas;
+    }
+}

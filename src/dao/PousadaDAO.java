@@ -9,10 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO para gerenciar operações de Pousada no banco de dados
- * Implementa a interface IDAO para operações CRUD
- */
+
 public class PousadaDAO extends BaseDAO implements IDAO<Pousada> {
     
     public void mostrarPousadas() {
