@@ -1,26 +1,26 @@
 package dao;
 
-import conexao.Conexao;
-import dto.PessoaFisica;
-import exception.DadosInvalidosException;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
+import dto.Funcionario;
+import conexao.Conexao;
+import exception.DadosInvalidosException;
 
-public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
+public class FuncionarioDAO extends BaseDAO implements IDAO<Funcionario> {
     
-    public static boolean cadastrarPessoaFisica(PessoaFisica pf) throws DadosInvalidosException {
-        if (pf == null || pf.getUsuario() == null) {
-            throw new DadosInvalidosException("PessoaFisica ou usuario não pode ser nulo");
+    public static boolean cadastrarFuncionario(Funcionario func) throws DadosInvalidosException {
+        if (func == null || func.getUsuario() == null) {
+            throw new DadosInvalidosException("Funcionario ou usuario não pode ser nulo");
         }
         
-        if (PessoaDAO.existeUsuario(pf.getUsuario())) {
+        if (PessoaDAO.existeUsuario(func.getUsuario())) {
             System.out.println("Erro: Usuário já cadastrado.");
             return false;
         }
 
         String sqlPessoa = "INSERT INTO pessoa (usuario, nome, telefone) VALUES (?, ?, ?)";
-        String sqlPessoaFisica = "INSERT INTO pessoa_fisica (pf_usuario, pf_cpf, pf_sexo) VALUES (?, ?, ?)";
+        String sqlFuncionario = "INSERT INTO funcionario (fun_usuario, fun_cpf, fun_sexo, fun_cargo, fun_salario) VALUES (?, ?, ?, ?, ?)";
 
         Connection conn = null;
         try {
@@ -29,22 +29,24 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
 
             // Inserir na tabela Pessoa
             try (PreparedStatement psPessoa = conn.prepareStatement(sqlPessoa)) {
-                psPessoa.setString(1, pf.getUsuario());
-                psPessoa.setString(2, pf.getNome());
-                psPessoa.setString(3, pf.getTelefone());
+                psPessoa.setString(1, func.getUsuario());
+                psPessoa.setString(2, func.getNome());
+                psPessoa.setString(3, func.getTelefone());
                 psPessoa.executeUpdate();
             }
 
-            // Inserir na tabela PessoaFisica
-            try (PreparedStatement psPessoaFisica = conn.prepareStatement(sqlPessoaFisica)) {
-                psPessoaFisica.setString(1, pf.getUsuario());
-                psPessoaFisica.setInt(2, pf.getCpf());
-                psPessoaFisica.setString(3, pf.getSexo());
-                psPessoaFisica.executeUpdate();
+            // Inserir na tabela Funcionario
+            try (PreparedStatement psFuncionario = conn.prepareStatement(sqlFuncionario)) {
+                psFuncionario.setString(1, func.getUsuario());
+                psFuncionario.setInt(2, func.getCpf());
+                psFuncionario.setString(3, func.getSexo());
+                psFuncionario.setString(4, func.getCargo());
+                psFuncionario.setInt(5, func.getSalario());
+                psFuncionario.executeUpdate();
             }
 
             conn.commit();
-            System.out.println("Pessoa Física cadastrada com sucesso!");
+            System.out.println("Funcionário cadastrado com sucesso!");
             return true;
 
         } catch (SQLException e) {
@@ -55,7 +57,7 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
                     System.out.println("ERRO no rollback: " + ex.getMessage());
                 }
             }
-            System.out.println("ERRO ao cadastrar Pessoa Física: " + e.getMessage());
+            System.out.println("ERRO ao cadastrar Funcionário: " + e.getMessage());
             e.printStackTrace();
             return false;
         } finally {
@@ -69,10 +71,10 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
         }
     }
 
-    public static PessoaFisica buscarPorUsuario(String usuario) {
-        String sql = "SELECT p.usuario, p.nome, p.telefone, pf.pf_cpf, pf.pf_sexo " +
+    public static Funcionario buscarPorUsuario(String usuario) {
+        String sql = "SELECT p.usuario, p.nome, p.telefone, f.fun_cpf, f.fun_sexo, f.fun_cargo, f.fun_salario " +
                      "FROM pessoa p " +
-                     "JOIN pessoa_fisica pf ON p.usuario = pf.pf_usuario " +
+                     "JOIN funcionario f ON p.usuario = f.fun_usuario " +
                      "WHERE p.usuario = ?";
 
         try (Connection conn = Conexao.getConexao();
@@ -81,17 +83,19 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             ps.setString(1, usuario);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new PessoaFisica(
+                    return new Funcionario(
                         rs.getString("usuario"),
                         rs.getString("nome"),
                         rs.getString("telefone"),
-                        rs.getInt("pf_cpf"),
-                        rs.getString("pf_sexo")
+                        rs.getInt("fun_cpf"),
+                        rs.getString("fun_sexo"),
+                        rs.getString("fun_cargo"),
+                        rs.getInt("fun_salario")
                     );
                 }
             }
         } catch (SQLException e) {
-            System.out.println("ERRO ao buscar Pessoa Física: " + e.getMessage());
+            System.out.println("ERRO ao buscar Funcionário: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -99,21 +103,21 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     
     // Implementação da interface IDAO
     @Override
-    public void adicionar(PessoaFisica pf) throws Exception {
-        if (!cadastrarPessoaFisica(pf)) {
-            throw new Exception("Falha ao adicionar pessoa física");
+    public void adicionar(Funcionario func) throws Exception {
+        if (!cadastrarFuncionario(func)) {
+            throw new Exception("Falha ao adicionar funcionário");
         }
     }
     
     @Override
-    public PessoaFisica obterPorId(int id) throws Exception {
-        throw new UnsupportedOperationException("Use buscarPorUsuario(String) para PessoaFisica");
+    public Funcionario obterPorId(int id) throws Exception {
+        throw new UnsupportedOperationException("Use buscarPorUsuario(String) para Funcionario");
     }
     
     @Override
-    public void atualizar(PessoaFisica pf) throws Exception {
+    public void atualizar(Funcionario func) throws Exception {
         String sqlPessoa = "UPDATE pessoa SET nome = ?, telefone = ? WHERE usuario = ?";
-        String sqlPessoaFisica = "UPDATE pessoa_fisica SET pf_cpf = ?, pf_sexo = ? WHERE pf_usuario = ?";
+        String sqlFuncionario = "UPDATE funcionario SET fun_cpf = ?, fun_sexo = ?, fun_cargo = ?, fun_salario = ? WHERE fun_usuario = ?";
         
         Connection conn = null;
         try {
@@ -122,17 +126,19 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             
             // Atualizar tabela Pessoa
             try (PreparedStatement ps = conn.prepareStatement(sqlPessoa)) {
-                ps.setString(1, pf.getNome());
-                ps.setString(2, pf.getTelefone());
-                ps.setString(3, pf.getUsuario());
+                ps.setString(1, func.getNome());
+                ps.setString(2, func.getTelefone());
+                ps.setString(3, func.getUsuario());
                 ps.executeUpdate();
             }
             
-            // Atualizar tabela PessoaFisica
-            try (PreparedStatement ps = conn.prepareStatement(sqlPessoaFisica)) {
-                ps.setInt(1, pf.getCpf());
-                ps.setString(2, pf.getSexo());
-                ps.setString(3, pf.getUsuario());
+            // Atualizar tabela Funcionario
+            try (PreparedStatement ps = conn.prepareStatement(sqlFuncionario)) {
+                ps.setInt(1, func.getCpf());
+                ps.setString(2, func.getSexo());
+                ps.setString(3, func.getCargo());
+                ps.setInt(4, func.getSalario());
+                ps.setString(5, func.getUsuario());
                 ps.executeUpdate();
             }
             
@@ -145,7 +151,7 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
                     System.out.println("ERRO no rollback: " + ex.getMessage());
                 }
             }
-            throw new Exception("Erro ao atualizar pessoa física: " + e.getMessage());
+            throw new Exception("Erro ao atualizar funcionário: " + e.getMessage());
         } finally {
             if (conn != null) {
                 try {
@@ -159,11 +165,11 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
     
     @Override
     public void deletar(int id) throws Exception {
-        throw new UnsupportedOperationException("Use deletarPorUsuario(String) para PessoaFisica");
+        throw new UnsupportedOperationException("Use deletarPorUsuario(String) para Funcionario");
     }
     
     public static void deletarPorUsuario(String usuario) throws Exception {
-        // A exclusão em pessoa_fisica vai em cascata quando deletar de pessoa
+        // A exclusão em funcionario vai em cascata quando deletar de pessoa
         String sql = "DELETE FROM pessoa WHERE usuario = ?";
         
         try (Connection conn = Conexao.getConexao();
@@ -172,33 +178,35 @@ public class PessoaFisicaDAO extends BaseDAO implements IDAO<PessoaFisica> {
             ps.setString(1, usuario);
             
             if (ps.executeUpdate() == 0) {
-                throw new Exception("Pessoa física não encontrada para exclusão");
+                throw new Exception("Funcionário não encontrado para exclusão");
             }
         }
     }
     
     @Override
-    public List<PessoaFisica> listarTodos() throws Exception {
-        List<PessoaFisica> pessoas = new ArrayList<>();
-        String sql = "SELECT p.usuario, p.nome, p.telefone, pf.pf_cpf, pf.pf_sexo " +
+    public List<Funcionario> listarTodos() throws Exception {
+        List<Funcionario> funcionarios = new ArrayList<>();
+        String sql = "SELECT p.usuario, p.nome, p.telefone, f.fun_cpf, f.fun_sexo, f.fun_cargo, f.fun_salario " +
                      "FROM pessoa p " +
-                     "JOIN pessoa_fisica pf ON p.usuario = pf.pf_usuario";
+                     "JOIN funcionario f ON p.usuario = f.fun_usuario";
         
         try (Connection conn = Conexao.getConexao();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             
             while (rs.next()) {
-                pessoas.add(new PessoaFisica(
+                funcionarios.add(new Funcionario(
                     rs.getString("usuario"),
                     rs.getString("nome"),
                     rs.getString("telefone"),
-                    rs.getInt("pf_cpf"),
-                    rs.getString("pf_sexo")
+                    rs.getInt("fun_cpf"),
+                    rs.getString("fun_sexo"),
+                    rs.getString("fun_cargo"),
+                    rs.getInt("fun_salario")
                 ));
             }
         }
         
-        return pessoas;
+        return funcionarios;
     }
 }
