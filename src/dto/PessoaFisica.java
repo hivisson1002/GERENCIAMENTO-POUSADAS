@@ -1,22 +1,22 @@
 package dto;
 
 public class PessoaFisica extends Pessoa {
-    private String cpf;
+    private int cpf;
     private String sexo;
     
     public PessoaFisica() {}
     
-    public PessoaFisica(String user, String nome, String tel, String cpf, String sexo) {
-        super(user, nome, tel);
+    public PessoaFisica(String usuario, String nome, String telefone, int cpf, String sexo) {
+        super(usuario, nome, telefone);
         this.cpf = cpf;
         this.sexo = sexo;
     }
     
-    public String getCpf() {
+    public int getCpf() {
         return cpf;
     }
     
-    public void setCpf(String cpf) {
+    public void setCpf(int cpf) {
         this.cpf = cpf;
     }
     

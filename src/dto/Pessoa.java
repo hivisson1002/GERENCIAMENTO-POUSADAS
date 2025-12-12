@@ -1,24 +1,24 @@
 package dto;
 
 public class Pessoa {
-    private String user;
+    private String usuario;
     private String nome;
-    private String tel;
+    private String telefone;
 
     public Pessoa() {}
 
-    public Pessoa(String user, String nome, String tel) {
-        this.user = user;
+    public Pessoa(String usuario, String nome, String telefone) {
+        this.usuario = usuario;
         this.nome = nome;
-        this.tel = tel;
+        this.telefone = telefone;
     }
 
-    public String getUser() {
-        return user;
+    public String getUsuario() {
+        return usuario;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
     }
 
     public String getNome() {
@@ -29,17 +29,17 @@ public class Pessoa {
         this.nome = nome;
     }
 
-    public String getTel() {
-        return tel;
+    public String getTelefone() {
+        return telefone;
     }
 
-    public void setTel(String tel) {
-        this.tel = tel;
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 
     @Override
     public String toString() {
-        return "Pessoa [user=" + user + ", nome=" + nome + ", tel=" + tel + "]";
+        return "Pessoa [usuario=" + usuario + ", nome=" + nome + ", telefone=" + telefone + "]";
     }
 
     @Override
@@ -47,11 +47,11 @@ public class Pessoa {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Pessoa pessoa = (Pessoa) obj;
-        return user != null && user.equals(pessoa.user);
+        return usuario != null && usuario.equals(pessoa.usuario);
     }
 
     @Override
     public int hashCode() {
-        return user != null ? user.hashCode() : 0;
+        return usuario != null ? usuario.hashCode() : 0;
     }
 }
