@@ -4,6 +4,8 @@ import conexao.Conexao;
 import dto.Pousada;
 import dto.Quarto;
 import dto.QuartoStandard;
+import dto.QuartoDeluxe;
+import dto.QuartoPresidencial;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +35,27 @@ public class QuartoDAO extends BaseDAO implements IDAO<Quarto> {
                 String nome = rs.getString("qua_nome");
                 int camas = rs.getInt("qua_camas");
                 int valor_dia = rs.getInt("qua_valor_dia");
+                String tipo = rs.getString("qua_tipo");
+                boolean jacuzzi = rs.getBoolean("qua_jacuzzi");
+                boolean salaEstar = rs.getBoolean("qua_sala_estar");
                 
-                boolean jacuzzi = false;
-                boolean salaDeEstar = false;
+                // Cria o tipo correto de quarto baseado no tipo armazenado no banco
+                Quarto quarto;
+                if (tipo == null) {
+                    tipo = "STANDARD";
+                }
                 
-                Quarto quarto = new QuartoStandard(pousada, nome, camas, valor_dia);
+                switch (tipo.toUpperCase()) {
+                    case "DELUXE":
+                        quarto = new QuartoDeluxe(pousada, nome, camas, valor_dia, jacuzzi);
+                        break;
+                    case "PRESIDENCIAL":
+                        quarto = new QuartoPresidencial(pousada, nome, camas, valor_dia, salaEstar, jacuzzi);
+                        break;
+                    default:
+                        quarto = new QuartoStandard(pousada, nome, camas, valor_dia);
+                }
+                
                 quarto.setId(id);
                 listaQuartos.add(quarto);
             }
@@ -104,7 +122,7 @@ public class QuartoDAO extends BaseDAO implements IDAO<Quarto> {
     
     // Métodos específicos da classe
     public void adicionarQuarto(Quarto quarto) {
-        String sql = "INSERT INTO quarto (qua_pou, qua_nome, qua_camas, qua_valor_dia) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO quarto (qua_pou, qua_nome, qua_camas, qua_valor_dia, qua_tipo, qua_jacuzzi, qua_sala_estar) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = Conexao.getConexao();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -113,6 +131,26 @@ public class QuartoDAO extends BaseDAO implements IDAO<Quarto> {
             preparedStatement.setString(2, quarto.getNome());
             preparedStatement.setInt(3, quarto.getCamas());
             preparedStatement.setInt(4, quarto.getValor_dia());
+            
+            // Determina o tipo do quarto
+            String tipo = "STANDARD";
+            boolean jacuzzi = false;
+            boolean salaEstar = false;
+            
+            if (quarto instanceof QuartoPresidencial) {
+                tipo = "PRESIDENCIAL";
+                QuartoPresidencial qp = (QuartoPresidencial) quarto;
+                jacuzzi = qp.temJacuzzi();
+                salaEstar = qp.isTemSalaDeEstar();
+            } else if (quarto instanceof QuartoDeluxe) {
+                tipo = "DELUXE";
+                QuartoDeluxe qd = (QuartoDeluxe) quarto;
+                jacuzzi = qd.isTemJacuzzi();
+            }
+            
+            preparedStatement.setString(5, tipo);
+            preparedStatement.setBoolean(6, jacuzzi);
+            preparedStatement.setBoolean(7, salaEstar);
 
             preparedStatement.executeUpdate();
            
